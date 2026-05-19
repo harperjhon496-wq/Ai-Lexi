@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Users ---
+    function isValidUser(data) {
+      return data.uid == request.auth.uid 
+        && data.walletBalance is number 
+        && data.walletBalance >= 0
+        && data.keys().hasAll(['uid', 'walletBalance'])
+        && data.keys().size() <= 6;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        // Action: Earn reward or Withdraw
+        incoming().diff(existing()).affectedKeys().hasOnly(['walletBalance', 'updatedAt']) ||
+        // Action: Link bank
+        incoming().diff(existing()).affectedKeys().hasOnly(['bankAccountLinked', 'updatedAt']) ||
+        // Action: Update profile
+        incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'email', 'updatedAt'])
+      );
+    }
+
+    // --- Budgets ---
+    function isValidBudget(data) {
+      return data.userId == request.auth.uid
+        && data.limit is number && data.limit >= 0
+        && data.spent is number && data.spent >= 0
+        && data.category is string;
+    }
+
+    match /users/{userId}/budgets/{budgetId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidBudget(incoming());
+      allow update: if isOwner(userId) && isValidBudget(incoming());
+      allow delete: if isOwner(userId);
+    }
+
+    // --- Transactions ---
+    function isValidTransaction(data) {
+      return data.userId == request.auth.uid
+        && data.amount is number
+        && data.type in ['income', 'expense']
+        && data.date is timestamp;
+    }
+
+    match /users/{userId}/transactions/{transactionId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidTransaction(incoming());
+      allow update: if isOwner(userId) && isValidTransaction(incoming());
+      allow delete: if isOwner(userId);
+    }
+
+    // --- Goals ---
+    function isValidGoal(data) {
+      return data.userId == request.auth.uid
+        && data.targetAmount is number && data.targetAmount > 0
+        && data.currentAmount is number && data.currentAmount >= 0;
+    }
+
+    match /users/{userId}/goals/{goalId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidGoal(incoming());
+      allow update: if isOwner(userId) && isValidGoal(incoming());
+      allow delete: if isOwner(userId);
+    }
+
+    // --- Categories ---
+    function isValidCategory(data) {
+      return data.userId == request.auth.uid
+        && data.name is string && data.name.size() > 0;
+    }
+
+    match /users/{userId}/categories/{categoryId} {
+      allow list: if isOwner(userId);
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidCategory(incoming());
+      allow update: if isOwner(userId) && isValidCategory(incoming());
+      allow delete: if isOwner(userId);
+    }
+
+    // --- Challenges (Public Read, Admin Write) ---
+    match /challenges/{challengeId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Only via console or system for now
+    }
+  }
+}

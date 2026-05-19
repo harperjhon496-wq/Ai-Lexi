@@ -1,0 +1,6 @@
+{
+  "name": "Budgee: Gamified Budgeting",
+  "description": "Track your spending, set goals, and earn rewards through financial challenges. Featuring automatic transaction sync and AI-powered insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

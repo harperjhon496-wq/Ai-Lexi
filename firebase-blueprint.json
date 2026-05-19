@@ -1,0 +1,111 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile with balance and settings",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "walletBalance": { "type": "number" },
+        "bankAccountLinked": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "walletBalance"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "Monthly budget for a specific category",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "category": { "type": "string" },
+        "limit": { "type": "number" },
+        "spent": { "type": "number" },
+        "period": { "type": "string" }
+      },
+      "required": ["userId", "category", "limit", "spent"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Individual income or expense transaction",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "type": { "type": "string", "enum": ["income", "expense"] },
+        "date": { "type": "string", "format": "date-time" },
+        "source": { "type": "string", "enum": ["manual", "bank_sync"] }
+      },
+      "required": ["userId", "amount", "type", "date"]
+    },
+    "Goal": {
+      "title": "Goal",
+      "description": "Savings goal",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "icon": { "type": "string" }
+      },
+      "required": ["userId", "name", "targetAmount", "currentAmount"]
+    },
+    "Challenge": {
+      "title": "Challenge",
+      "description": "Financial quiz challenges",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "question": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "correctIndex": { "type": "integer" },
+        "reward": { "type": "number" }
+      },
+      "required": ["question", "options", "correctIndex"]
+    },
+    "Category": {
+      "title": "Category",
+      "description": "User-defined financial category",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "users/{userId}/budgets/{budgetId}": {
+      "schema": "Budget",
+      "description": "User's budget limits"
+    },
+    "users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "User's financial transactions"
+    },
+    "users/{userId}/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "User's savings goals"
+    },
+    "users/{userId}/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "User's financial categories"
+    },
+    "challenges/{challengeId}": {
+      "schema": "Challenge",
+      "description": "App-wide quiz challenges"
+    }
+  }
+}
